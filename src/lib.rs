@@ -45,6 +45,13 @@ pub struct IterMut<'a, T: 'a>
     taken: usize,
 }
 
+#[derive(Debug)]
+pub struct Cursor<'a, T: 'a>
+{
+    pos: usize,
+    list: &'a mut List<T>,
+}
+
 impl<T> List<T>
 {
     pub fn new() -> Self { List::with_capacity(0) }
@@ -78,6 +85,14 @@ impl<T> List<T>
             head: self.head,
             tail: self.tail,
             taken: 0,
+        }
+    }
+
+    pub fn cursor(&mut self) -> Cursor<T>
+    {
+        Cursor {
+            pos: self.head,
+            list: self,
         }
     }
 
@@ -330,6 +345,41 @@ impl<'a, T: 'a> DoubleEndedIterator for IterMut<'a, T>
     }
 }
 
+impl<'a, T: 'a> Cursor<'a, T>
+{
+    pub fn next(&mut self) -> Option<&mut T>
+    {
+        match self.list.nodes.get_mut(self.pos) {
+            None => None,
+            Some(n) => {
+                self.pos = n.next();
+                Some(&mut n.value)
+            }
+        }
+    }
+
+    pub fn prev(&mut self) -> Option<&mut T>
+    {
+        if self.pos == self.list.head {
+            // jump back from head to one past the end, just like gankro's cursor
+            self.pos = END;
+            return None;
+        }
+        let prev = 
+            match self.list.nodes.get(self.pos) {
+                None => self.list.tail,
+                Some(n) => n.prev(),
+            };
+        match self.list.nodes.get_mut(prev) {
+            None => None,
+            Some(n) => {
+                self.pos = prev;
+                Some(&mut n.value)
+            }
+        }
+    }
+}
+
 #[bench]
 fn push_front_dlist(b: &mut test::Bencher)
 {
@@ -468,4 +518,11 @@ fn main() {
     m.linearize();
     println!("Repr = {:?}", m);
     println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
+
+    let mut curs = m.cursor();
+
+    curs.prev();
+    while let Some(x) = curs.prev() {
+        println!("{:?}", x);
+    }
 }
