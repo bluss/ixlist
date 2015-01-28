@@ -237,7 +237,7 @@ impl<T> List<T>
             return;
         }
 
-        // First label every node by ther index + 1 in the next slot
+        // First label every node by their index + 1 in the next slot
         let mut head = self.head;
         let mut index = 0;
         while let Some(n) = self.nodes.get_mut(head) {
@@ -251,13 +251,13 @@ impl<T> List<T>
 
         // iterate and re-label in order
         // prev's need update, all the next links except the last should be ok.
-        let last = self.len() - 1;
-        for (index, node) in self.nodes.iter_mut().enumerate() {
-            *node.prev_mut() = if index == 0 { END } else { index - 1};
+        for (index, node) in self.nodes[1..].iter_mut().enumerate() {
+            *node.prev_mut() = index;
         }
-        *self.nodes[last].next_mut() = END;
         self.head = 0;
-        self.tail = last;
+        self.tail = self.len() - 1;
+        *self.nodes[self.head].prev_mut() = END;
+        *self.nodes[self.tail].next_mut() = END;
     }
 }
 
