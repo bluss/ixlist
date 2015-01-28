@@ -109,4 +109,9 @@ fn cursor()
     }
     assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![2, 0, 4, 1, 3]);
     assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3, 1, 4, 0, 2]);
+
+    l.linearize();
+
+    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![2, 0, 4, 1, 3]);
+    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3, 1, 4, 0, 2]);
 }

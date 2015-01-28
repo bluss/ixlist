@@ -220,24 +220,29 @@ impl<T> List<T>
     /// Reorder internal datastructure into traversal order
     pub fn linearize(&mut self)
     {
-        // First label every node by ther index in the prev slot
+        if self.len() == 0 {
+            return;
+        }
+
+        // First label every node by ther index + 1 in the next slot
         let mut head = self.head;
         let mut index = 0;
         while let Some(n) = self.nodes.get_mut(head) {
-            *n.prev_mut() = index;
             index += 1;
             head = n.next();
+            *n.next_mut() = index;
         }
 
         // sort by index
-        self.nodes.sort_by(|a, b| a.prev().cmp(&b.prev()));
+        self.nodes.sort_by(|a, b| a.next().cmp(&b.next()));
 
         // iterate and re-label in order
+        // prev's need update, all the next links except the last should be ok.
         let last = self.len() - 1;
         for (index, node) in self.nodes.iter_mut().enumerate() {
             *node.prev_mut() = if index == 0 { END } else { index - 1};
-            *node.next_mut() = if index == last { END } else { index + 1 }
         }
+        *self.nodes[last].next_mut() = END;
         self.head = 0;
         self.tail = last;
     }
