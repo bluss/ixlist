@@ -69,7 +69,17 @@ impl<T> List<T>
             taken: 0,
         }
     }
-   
+
+    pub fn iter_mut(&mut self) -> IterMut<T>
+    {
+        IterMut {
+            nodes: &mut *self.nodes,
+            head: self.head,
+            tail: self.tail,
+            taken: 0,
+        }
+    }
+
     pub fn push_front(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node{value: value, link: [END, self.head]};
@@ -81,7 +91,7 @@ impl<T> List<T>
         }
         self.head = index;
     }
-   
+
     pub fn push_back(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node{value: value, link: [self.tail, END]};
@@ -93,7 +103,7 @@ impl<T> List<T>
         }
         self.tail = index;
     }
-   
+
     /// "unlink" the node at idx
     fn prepare_remove(&mut self, idx: usize)
     {
@@ -187,7 +197,12 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
             None => None,
             Some(n) => {
                 self.taken += 1;
-                self.head = n.next();
+                if self.head == self.tail {
+                    self.head = END;
+                    self.tail = END;
+                } else {
+                    self.head = n.next();
+                }
                 Some(&n.value)
             }
         }
@@ -200,6 +215,29 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
     }
 }
 
+impl<'a, T: 'a> DoubleEndedIterator for Iter<'a, T>
+{
+    fn next_back(&mut self) -> Option<&'a T>
+    {
+        match self.nodes.get(self.tail) {
+            None => None,
+            Some(n) => {
+                self.taken += 1;
+                if self.head == self.tail {
+                    self.head = END;
+                    self.tail = END;
+                } else {
+                    self.tail = n.prev();
+                }
+
+                Some(&n.value)
+            }
+        }
+    }
+}
+
+
+
 impl<'a, T: 'a> Iterator for IterMut<'a, T>
 {
     type Item = &'a mut T;
@@ -210,7 +248,12 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
             None => None,
             Some(n) => {
                 self.taken += 1;
-                self.head = n.next();
+                if self.head == self.tail {
+                    self.head = END;
+                    self.tail = END;
+                } else {
+                    self.head = n.next();
+                }
 
                 // We cannot in safe rust, derive a &'a mut from &mut self,
                 // when the life of &mut self is shorter than 'a.
@@ -231,6 +274,31 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
     {
         let len = self.nodes.len() - self.taken;
         (len, Some(len))
+    }
+}
+
+impl<'a, T: 'a> DoubleEndedIterator for IterMut<'a, T>
+{
+    fn next_back(&mut self) -> Option<&'a mut T>
+    {
+        match self.nodes.get_mut(self.tail) {
+            None => None,
+            Some(n) => {
+                self.taken += 1;
+                if self.head == self.tail {
+                    self.head = END;
+                    self.tail = END;
+                } else {
+                    self.tail = n.prev();
+                }
+
+                // See .next() above
+                let long_life_value = unsafe {
+                    &mut *(&mut n.value as *mut _)
+                };
+                Some(long_life_value)
+            }
+        }
     }
 }
 
@@ -311,4 +379,32 @@ fn main() {
     l.pop_back();
     println!("Repr = {:?}", l);
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
+
+    let mut m = List::new();
+    m.push_back(1);
+    m.push_back(2);
+    m.push_back(3);
+    m.push_back(4);
+    m.push_back(5);
+
+    println!("Repr = {:?}", m);
+    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
+    m.iter_mut().reverse_in_place();
+    println!("Repr = {:?}", m);
+    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
+
+    {
+        let mut it = m.iter_mut();
+        loop {
+            match (it.next(), it.next_back()) {
+                (Some(a), Some(b)) => {
+                    println!("Swap {:?} and {:?}", a, b);
+                    std::mem::swap(a, b)
+                }
+                _ => break,
+            }
+        }
+    }
+    println!("Repr = {:?}", m);
+    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
 }
