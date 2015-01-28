@@ -378,6 +378,36 @@ impl<'a, T: 'a> Cursor<'a, T>
             }
         }
     }
+
+    pub fn insert(&mut self, value: T)
+    {
+        let index = self.list.len();
+        if self.pos == END {
+            self.list.push_back(value);
+            self.pos = index;
+        } else if self.pos == self.list.head {
+            self.list.push_front(value);
+            self.pos = index;
+        } else {
+            let prev = match self.list.nodes.get(self.pos) {
+                None => panic!(),
+                Some(n) => n.prev(),
+            };
+            let mut node = Node{value: value, link: [END; 2]};
+            *node.prev_mut() = prev;
+            *node.next_mut() = self.pos;
+            //if next != END {
+            if prev != END {
+                *self.list.nodes[prev].next_mut() = index;
+            } else {
+                self.list.head = index;
+            }
+            //} else { self.list.tail = index; }
+            *self.list.nodes[self.pos].prev_mut() = index;
+            self.list.nodes.push(node);
+            self.pos = index;
+        }
+    }
 }
 
 #[bench]
@@ -519,10 +549,29 @@ fn main() {
     println!("Repr = {:?}", m);
     println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
 
-    let mut curs = m.cursor();
+    {
+        let mut curs = m.cursor();
 
-    curs.prev();
-    while let Some(x) = curs.prev() {
-        println!("{:?}", x);
+        curs.prev();
+        while let Some(x) = curs.prev() {
+            println!("{:?}", x);
+            break;
+        }
+        curs.insert(6);
+        //println!("Repr = {:?}", curs);
+        while let Some(x) = curs.next() {
+            println!("{:?}", x);
+        }
     }
+    {
+        m.cursor().insert(77);
+        let mut c = m.cursor();
+        //c.next(); c.next();
+        c.next();
+        c.next();
+        c.insert(72);
+        c.insert(71);
+    }
+    println!("Repr = {:?}", m);
+    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
 }
