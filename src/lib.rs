@@ -127,25 +127,23 @@ impl<T> List<T>
     pub fn push_front(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node{value: value, link: [END, self.head]};
-        self.nodes.push(node);
-        if self.head != END {
-            *self.nodes[self.head].prev_mut() = index;
-        } else {
-            self.tail = index;
+        match self.nodes.get_mut(self.head) {
+            None => self.tail = index, // head is END
+            Some(n) => *n.prev_mut() = index,
         }
         self.head = index;
+        self.nodes.push(node);
     }
 
     pub fn push_back(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node{value: value, link: [self.tail, END]};
-        self.nodes.push(node);
-        if self.tail != END {
-            *self.nodes[self.tail].next_mut() = index;
-        } else {
-            self.head = index;
+        match self.nodes.get_mut(self.tail) {
+            None => self.head = index, // tail is END
+            Some(n) => *n.next_mut() = index,
         }
         self.tail = index;
+        self.nodes.push(node);
     }
 
     /// "unlink" the node at idx
@@ -432,20 +430,13 @@ impl<'a, T: 'a> Cursor<'a, T>
             self.list.push_front(value);
             self.pos = index;
         } else {
-            let prev = match self.list.nodes.get(self.pos) {
-                None => panic!(),
-                Some(n) => n.prev(),
-            };
-            let mut node = Node{value: value, link: [END; 2]};
-            *node.prev_mut() = prev;
-            *node.next_mut() = self.pos;
-            //if next != END {
-            if prev != END {
-                *self.list.nodes[prev].next_mut() = index;
-            } else {
-                self.list.head = index;
+            let prev = self.list.nodes[self.pos].prev();
+            let node = Node{value: value, link: [prev, self.pos]};
+
+            match self.list.nodes.get_mut(prev) {
+                None => self.list.head = index, // prev is END
+                Some(n) => *n.next_mut() = index,
             }
-            //} else { self.list.tail = index; }
             *self.list.nodes[self.pos].prev_mut() = index;
             self.list.nodes.push(node);
             self.pos = index;
