@@ -1,10 +1,12 @@
 type Ix = usize;
+/// **END** is the "null" pointer of the link indexes
 const END: usize = -1us;
 
 #[derive(Clone, Debug)]
 pub struct Node<T> {
     pub value: T,
-    link: [usize; 2],  // prev, next
+    /// Prev, Next.
+    link: [usize; 2],
 }
 
 impl<T> Node<T> {
@@ -16,15 +18,24 @@ impl<T> Node<T> {
 
 /// **List** is a doubly linked list stored in one contiguous allocation.
 ///
-/// Features: O(1) insert and remove both at front and back. O(1) insert anywhere
+/// It is like a list implemented with pointers, except instead of pointers we
+/// use indices into a backing vector.
+///
+/// ## Features
+///
+/// O(1) insert and remove both at front and back. O(1) insert anywhere
 /// if you have a cursor to that position.
 ///
 /// Can be generic over the index type (not yet implemented), so that internal
 /// prev/node links can use less space than a regular pointer (can be u16 or u32 index).
 ///
+/// ## Discussion
 ///
 /// Idea (not yet implemented): Fixate node positions at certain intervals,
 /// e.g. every 32nd node is always in its correct index in the backing vector??
+///
+/// With some cleanup we can use unchecked indexing for impl.
+///
 #[derive(Clone, Debug)]
 pub struct List<T> {
     head: usize,
@@ -50,6 +61,8 @@ pub struct IterMut<'a, T: 'a>
     taken: usize,
 }
 
+/// A cursor points to a location in a list, and you can step the
+/// cursor forward and backward.
 #[derive(Debug)]
 pub struct Cursor<'a, T: 'a>
 {
@@ -67,8 +80,10 @@ pub enum Seek {
 
 impl<T> List<T>
 {
+    /// Create a new **List**.
     pub fn new() -> Self { List::with_capacity(0) }
 
+    /// Create a new **List** with specified capacity.
     pub fn with_capacity(cap: usize) -> Self
     {
         List{
@@ -365,6 +380,10 @@ impl<'a, T: 'a> DoubleEndedIterator for IterMut<'a, T>
 
 impl<'a, T: 'a> Cursor<'a, T>
 {
+    /// Step the cursor forward.
+    /// 
+    /// Returns **None** after the last element. After that, another call to
+    /// *.next()* returns the first element of the list.
     pub fn next(&mut self) -> Option<&mut T>
     {
         match self.list.nodes.get_mut(self.pos) {
@@ -376,6 +395,10 @@ impl<'a, T: 'a> Cursor<'a, T>
         }
     }
 
+    /// Step the cursor backward.
+    ///
+    /// Returns **None** when positioned before the first element. After that,
+    /// another call to *.prev()* returns the last element of the list.
     pub fn prev(&mut self) -> Option<&mut T>
     {
         if self.pos == self.list.head {
@@ -397,6 +420,8 @@ impl<'a, T: 'a> Cursor<'a, T>
         }
     }
 
+    /// Insert an element at the current position, e.g. before the element
+    /// that would be returned by *.next()* in this position.
     pub fn insert(&mut self, value: T)
     {
         let index = self.list.len();
