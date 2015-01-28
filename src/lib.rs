@@ -159,10 +159,11 @@ impl<T> List<T>
         //println!("{:?}", self);
 
         self.head = new_head;
-        let moved_index = self.nodes.len() - 1; // last index moves.
-        self.prepare_swap(h, moved_index);
         if self.head == END {
             self.tail = END;
+        } else {
+            let moved_index = self.nodes.len() - 1; // last index moves.
+            self.prepare_swap(h, moved_index);
         }
         let removed_node = self.nodes.swap_remove(h);
         Some(removed_node.value)
@@ -178,10 +179,11 @@ impl<T> List<T>
         self.prepare_remove(t);
 
         self.tail = new_tail;
-        let moved_index = self.nodes.len() - 1; // last index moves.
-        self.prepare_swap(t, moved_index);
         if self.tail == END {
             self.head = END;
+        } else {
+            let moved_index = self.nodes.len() - 1; // last index moves.
+            self.prepare_swap(t, moved_index);
         }
         let removed_node = self.nodes.swap_remove(t);
         Some(removed_node.value)
