@@ -15,6 +15,16 @@ impl<T> Node<T> {
 }
 
 /// **List** is a doubly linked list stored in one contiguous allocation.
+///
+/// Features: O(1) insert and remove both at front and back. O(1) insert anywhere
+/// if you have a cursor to that position.
+///
+/// Can be generic over the index type (not yet implemented), so that internal
+/// prev/node links can use less space than a regular pointer (can be u16 or u32 index).
+///
+///
+/// Idea (not yet implemented): Fixate node positions at certain intervals,
+/// e.g. every 32nd node is always in its correct index in the backing vector??
 #[derive(Clone, Debug)]
 pub struct List<T> {
     head: usize,
