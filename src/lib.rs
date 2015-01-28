@@ -2,7 +2,7 @@
 extern crate test;
 
 #[cfg(test)]
-use std::collections::DList;
+use std::collections::{DList, RingBuf};
 
 type Ix = usize;
 const END: usize = -1us;
@@ -317,6 +317,35 @@ fn push_front_dlist(b: &mut test::Bencher)
         dl
     })
 }
+
+#[bench]
+fn push_front_ringbuf(b: &mut test::Bencher)
+{
+    b.iter(|| {
+        let mut l = RingBuf::new();
+        let N = 1000;
+        for _ in (0..N) {
+            l.push_front(test::black_box(1));
+        }
+        l
+    })
+}
+
+// benches perform worse if this is included..
+/*
+#[bench]
+fn push_front_ringbuf_cap(b: &mut test::Bencher)
+{
+    b.iter(|| {
+        let N = 1000;
+        let mut l = RingBuf::with_capacity(N);
+        for _ in (0..N) {
+            l.push_front(test::black_box(1));
+        }
+        l
+    })
+}
+*/
 
 #[bench]
 fn push_front_list(b: &mut test::Bencher)
