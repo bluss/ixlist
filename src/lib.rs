@@ -136,6 +136,25 @@ impl<T> List<T>
         let removed_node = self.nodes.swap_remove(h);
         Some(removed_node.value)
     }
+
+    pub fn pop_back(&mut self) -> Option<T>
+    {
+        if self.tail == END {
+            return None
+        }
+        let t = self.tail;
+        let new_tail = self.nodes[t].prev();
+        self.prepare_remove(t);
+
+        self.tail = new_tail;
+        let moved_index = self.nodes.len() - 1; // last index moves.
+        self.prepare_swap(t, moved_index);
+        if self.tail == END {
+            self.head = END;
+        }
+        let removed_node = self.nodes.swap_remove(t);
+        Some(removed_node.value)
+    }
 }
 
 impl<'a, T: 'a> Iterator for Iter<'a, T>
@@ -190,13 +209,13 @@ fn main() {
     }
 
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_front();
+    l.pop_back();
     println!("Repr = {:?}", l);
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_front();
+    l.pop_back();
     println!("Repr = {:?}", l);
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_front();
+    l.pop_back();
     println!("Repr = {:?}", l);
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
 }
