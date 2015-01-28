@@ -72,9 +72,13 @@ pub struct Cursor<'a, T: 'a>
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub enum Seek {
+    /// Seek forward *n* steps, or at most to the end.
     Forward(usize),
+    /// Seek backward *n* steps, or at most to the beginning.
     Backward(usize),
+    /// Seek to the beginning.
     Head,
+    /// Seek to the end.
     Tail,
 }
 
@@ -385,7 +389,10 @@ impl<'a, T: 'a> Cursor<'a, T>
     pub fn next(&mut self) -> Option<&mut T>
     {
         match self.list.nodes.get_mut(self.pos) {
-            None => None,
+            None => {
+                self.pos = self.list.head;
+                None
+            }
             Some(n) => {
                 self.pos = n.next();
                 Some(&mut n.value)
@@ -448,8 +455,8 @@ impl<'a, T: 'a> Cursor<'a, T>
         match offset {
             Seek::Head => self.pos = self.list.head,
             Seek::Tail => self.pos = END,
-            Seek::Forward(n) => for _ in (0..n) { if self.next().is_none() { break } },
-            Seek::Backward(n) => for _ in (0..n) { if self.prev().is_none() { break } },
+            Seek::Forward(n) => for _ in (0..n) { if self.pos == END { break; } self.next(); },
+            Seek::Backward(n) => for _ in (0..n) { if self.pos == self.list.head { break; } self.prev(); }
         }
     }
 }

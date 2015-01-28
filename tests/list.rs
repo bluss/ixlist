@@ -114,4 +114,19 @@ fn cursor()
 
     assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![2, 0, 4, 1, 3]);
     assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3, 1, 4, 0, 2]);
+
+    // test wrap around with .next()
+    let mut l = List::new();
+    {
+        let mut c = l.cursor();
+        c.insert(0);
+        c.insert(1);
+        assert!(c.next().is_some());
+        assert!(c.next().is_some());
+        assert!(c.next().is_none());
+        assert!(c.next().is_some());
+        c.insert(-1);
+    }
+    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1, -1, 0]);
+    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![0, -1, 1]);
 }
