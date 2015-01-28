@@ -7,7 +7,7 @@ use std::collections::{DList, RingBuf};
 type Ix = usize;
 const END: usize = -1us;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Node<T> {
     pub value: T,
     link: [usize; 2],  // prev, next
@@ -20,7 +20,7 @@ impl<T> Node<T> {
     fn next_mut(&mut self) -> &mut Ix { &mut self.link[1] }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct List<T> {
     head: usize,
     tail: usize,
@@ -50,6 +50,14 @@ pub struct Cursor<'a, T: 'a>
 {
     pos: usize,
     list: &'a mut List<T>,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub enum Seek {
+    Forward(usize),
+    Backward(usize),
+    Head,
+    Tail,
 }
 
 impl<T> List<T>
@@ -408,6 +416,16 @@ impl<'a, T: 'a> Cursor<'a, T>
             self.pos = index;
         }
     }
+
+    pub fn seek(&mut self, offset: Seek)
+    {
+        match offset {
+            Seek::Head => self.pos = self.list.head,
+            Seek::Tail => self.pos = END,
+            Seek::Forward(n) => for _ in (0..n) { if self.next().is_none() { break } },
+            Seek::Backward(n) => for _ in (0..n) { if self.prev().is_none() { break } },
+        }
+    }
 }
 
 #[bench]
@@ -571,6 +589,9 @@ fn main() {
         c.next();
         c.insert(72);
         c.insert(71);
+        c.next();
+        c.next();
+        c.insert(73);
     }
     println!("Repr = {:?}", m);
     println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
