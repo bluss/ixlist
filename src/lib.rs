@@ -20,6 +20,7 @@ impl<T> Node<T> {
     fn next_mut(&mut self) -> &mut Ix { &mut self.link[1] }
 }
 
+/// **List** is a doubly linked list stored in one contiguous allocation.
 #[derive(Clone, Debug)]
 pub struct List<T> {
     head: usize,
@@ -433,8 +434,8 @@ fn push_front_dlist(b: &mut test::Bencher)
 {
     b.iter(|| {
         let mut dl = DList::new();
-        let N = 1000;
-        for _ in (0..N) {
+        let n = 1000;
+        for _ in (0..n) {
             dl.push_front(test::black_box(1));
         }
         dl
@@ -446,8 +447,8 @@ fn push_front_ringbuf(b: &mut test::Bencher)
 {
     b.iter(|| {
         let mut l = RingBuf::new();
-        let N = 1000;
-        for _ in (0..N) {
+        let n = 1000;
+        for _ in (0..n) {
             l.push_front(test::black_box(1));
         }
         l
@@ -475,8 +476,8 @@ fn push_front_list(b: &mut test::Bencher)
 {
     b.iter(|| {
         let mut l = List::new();
-        let N = 1000;
-        for _ in (0..N) {
+        let n = 1000;
+        for _ in (0..n) {
             l.push_front(test::black_box(1));
         }
         l
@@ -487,112 +488,12 @@ fn push_front_list(b: &mut test::Bencher)
 fn push_front_list_cap(b: &mut test::Bencher)
 {
     b.iter(|| {
-        let N = 1000;
-        let mut l = List::with_capacity(N);
-        for _ in (0..N) {
+        let n = 1000;
+        let mut l = List::with_capacity(n);
+        for _ in (0..n) {
             l.push_front(test::black_box(1));
         }
         l
     })
 }
 
-
-#[test]
-fn main() {
-    let mut l = List::new();
-    let front = l.pop_front();
-    assert_eq!(front, None);
-    assert_eq!(l.iter().count(), 0);
-    l.push_back(1);
-    assert_eq!(l.iter().count(), 1);
-    l.push_front(2);
-    assert_eq!(l.iter().count(), 2);
-    l.push_front(3);
-    assert_eq!(l.iter().count(), 3);
-    l.push_back(4);
-    assert_eq!(l.iter().count(), 4);
-    println!("{:?}", l);
-    let front = l.pop_front();
-    assert_eq!(front, Some(3));
-    println!("{:?}", l);
-    assert_eq!(l.iter().count(), 3);
-
-    {
-        let mut it = l.iter();
-        while let Some(elt) = it.next() {
-            println!("Elt={:?}, iter={:?}", elt, it);
-        }
-    }
-
-    println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_back();
-    println!("Repr = {:?}", l);
-    println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_back();
-    println!("Repr = {:?}", l);
-    println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-    l.pop_back();
-    println!("Repr = {:?}", l);
-    println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
-
-    let mut m = List::new();
-    m.push_back(2);
-    m.push_front(1);
-    m.push_back(3);
-    m.push_back(4);
-    m.push_back(5);
-
-    println!("Repr = {:?}", m);
-    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
-    m.iter_mut().reverse_in_place();
-    println!("Repr = {:?}", m);
-    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
-
-    {
-        let mut it = m.iter_mut();
-        loop {
-            match (it.next(), it.next_back()) {
-                (Some(a), Some(b)) => {
-                    println!("Swap {:?} and {:?}", a, b);
-                    std::mem::swap(a, b)
-                }
-                _ => break,
-            }
-        }
-    }
-    println!("Repr = {:?}", m);
-    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
-
-    m.linearize();
-    println!("Repr = {:?}", m);
-    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
-
-    {
-        let mut curs = m.cursor();
-
-        curs.prev();
-        while let Some(x) = curs.prev() {
-            println!("{:?}", x);
-            break;
-        }
-        curs.insert(6);
-        //println!("Repr = {:?}", curs);
-        while let Some(x) = curs.next() {
-            println!("{:?}", x);
-        }
-    }
-    {
-        m.cursor().insert(77);
-        let mut c = m.cursor();
-        //c.next(); c.next();
-        c.next();
-        c.next();
-        c.insert(72);
-        c.insert(71);
-        c.next();
-        c.next();
-        c.insert(73);
-    }
-    println!("Repr = {:?}", m);
-    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
-}
