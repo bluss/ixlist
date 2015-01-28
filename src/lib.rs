@@ -1,3 +1,7 @@
+#[cfg(test)]
+extern crate test;
+
+use std::collections::DList;
 
 type Ix = usize;
 const END: usize = -1us;
@@ -33,7 +37,14 @@ pub struct Iter<'a, T: 'a>
 
 impl<T> List<T>
 {
-    pub fn new() -> Self { List{head: END, tail: END, nodes: Vec::new()} }
+    pub fn new() -> Self { List::with_capacity(0) }
+
+    pub fn with_capacity(cap: usize) -> Self
+    {
+        List{
+            head: END, tail: END, nodes: Vec::with_capacity(cap),
+        }
+    }
 
     pub fn len(&self) -> usize
     {
@@ -178,6 +189,45 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
         let len = self.nodes.len() - self.taken;
         (len, Some(len))
     }
+}
+
+#[bench]
+fn push_front_dlist(b: &mut test::Bencher)
+{
+    b.iter(|| {
+        let mut dl = DList::new();
+        let N = 1000;
+        for _ in (0..N) {
+            dl.push_front(test::black_box(1));
+        }
+        dl
+    })
+}
+
+#[bench]
+fn push_front_list(b: &mut test::Bencher)
+{
+    b.iter(|| {
+        let mut l = List::new();
+        let N = 1000;
+        for _ in (0..N) {
+            l.push_front(test::black_box(1));
+        }
+        l
+    })
+}
+
+#[bench]
+fn push_front_list_cap(b: &mut test::Bencher)
+{
+    b.iter(|| {
+        let N = 1000;
+        let mut l = List::with_capacity(N);
+        for _ in (0..N) {
+            l.push_front(test::black_box(1));
+        }
+        l
+    })
 }
 
 
