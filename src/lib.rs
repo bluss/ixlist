@@ -35,6 +35,15 @@ pub struct Iter<'a, T: 'a>
     taken: usize,
 }
 
+#[derive(Debug)]
+pub struct IterMut<'a, T: 'a>
+{
+    head: usize,
+    tail: usize,
+    nodes: &'a mut [Node<T>],
+    taken: usize,
+}
+
 impl<T> List<T>
 {
     pub fn new() -> Self { List::with_capacity(0) }
@@ -180,6 +189,40 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
                 self.taken += 1;
                 self.head = n.next();
                 Some(&n.value)
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>)
+    {
+        let len = self.nodes.len() - self.taken;
+        (len, Some(len))
+    }
+}
+
+impl<'a, T: 'a> Iterator for IterMut<'a, T>
+{
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<&'a mut T>
+    {
+        match self.nodes.get_mut(self.head) {
+            None => None,
+            Some(n) => {
+                self.taken += 1;
+                self.head = n.next();
+
+                // We cannot in safe rust, derive a &'a mut from &mut self,
+                // when the life of &mut self is shorter than 'a.
+                //
+                // We guarantee that this will not allow two pointers to the same
+                // element during the iteration, and use unsafe to extend the life.
+                //
+                // See http://stackoverflow.com/a/25748645/3616050
+                let long_life_value = unsafe {
+                    &mut *(&mut n.value as *mut _)
+                };
+                Some(long_life_value)
             }
         }
     }
