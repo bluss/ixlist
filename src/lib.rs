@@ -1,6 +1,7 @@
 #[cfg(test)]
 extern crate test;
 
+#[cfg(test)]
 use std::collections::DList;
 
 type Ix = usize;
