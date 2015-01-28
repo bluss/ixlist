@@ -188,6 +188,31 @@ impl<T> List<T>
         let removed_node = self.nodes.swap_remove(t);
         Some(removed_node.value)
     }
+
+    /// Reorder internal datastructure into traversal order
+    pub fn linearize(&mut self)
+    {
+        // First label every node by ther index in the prev slot
+        let mut head = self.head;
+        let mut index = 0;
+        while let Some(n) = self.nodes.get_mut(head) {
+            *n.prev_mut() = index;
+            index += 1;
+            head = n.next();
+        }
+
+        // sort by index
+        self.nodes.sort_by(|a, b| a.prev().cmp(&b.prev()));
+
+        // iterate and re-label in order
+        let last = self.len() - 1;
+        for (index, node) in self.nodes.iter_mut().enumerate() {
+            *node.prev_mut() = if index == 0 { END } else { index - 1};
+            *node.next_mut() = if index == last { END } else { index + 1 }
+        }
+        self.head = 0;
+        self.tail = last;
+    }
 }
 
 impl<'a, T: 'a> Iterator for Iter<'a, T>
@@ -413,8 +438,8 @@ fn main() {
     println!("List: {:?}", l.iter().cloned().collect::<Vec<_>>());
 
     let mut m = List::new();
-    m.push_back(1);
     m.push_back(2);
+    m.push_front(1);
     m.push_back(3);
     m.push_back(4);
     m.push_back(5);
@@ -437,6 +462,10 @@ fn main() {
             }
         }
     }
+    println!("Repr = {:?}", m);
+    println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
+
+    m.linearize();
     println!("Repr = {:?}", m);
     println!("List: {:?}", m.iter().cloned().collect::<Vec<_>>());
 }
