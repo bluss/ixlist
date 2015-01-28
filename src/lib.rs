@@ -165,6 +165,21 @@ impl<T> List<T>
         }
     }
 
+    /// Change pointers to the node at **idx** to point to **to_index** instead.
+    fn prepare_move(&mut self, idx: usize, to_index: usize)
+    {
+        let prev = self.nodes[idx].prev();
+        let next = self.nodes[idx].next();
+        match self.nodes.get_mut(prev) {
+            None => {}
+            Some(n) => *n.next_mut() = to_index,
+        }
+        match self.nodes.get_mut(next) {
+            None => {}
+            Some(n) => *n.prev_mut() = to_index,
+        }
+    }
+
     /// Update links that point to **moved_index** to point to **free_spot**
     /// instead.
     ///
@@ -175,16 +190,7 @@ impl<T> List<T>
             return
         }
 
-        let prev = self.nodes[moved_index].prev();
-        let next = self.nodes[moved_index].next();
-        match self.nodes.get_mut(prev) {
-            None => {}
-            Some(n) => *n.next_mut() = free_spot,
-        }
-        match self.nodes.get_mut(next) {
-            None => {}
-            Some(n) => *n.prev_mut() = free_spot,
-        }
+        self.prepare_move(moved_index, free_spot);
         if self.head == moved_index {
             self.head = free_spot;
         }
@@ -201,7 +207,6 @@ impl<T> List<T>
         let h = self.head;
         let new_head = self.nodes[h].next();
         self.prepare_remove(h);
-        //println!("{:?}", self);
 
         self.head = new_head;
         if self.head == END {
