@@ -8,7 +8,7 @@ const END: usize = std::usize::MAX;
 pub struct Node<T> {
     pub value: T,
     /// Prev, Next.
-    link: [Ix; 2],
+    link: [usize; 2],
 }
 
 impl<T> Node<T> {
@@ -27,23 +27,22 @@ impl<T> Node<T> {
 
 /// **List** is a doubly linked list stored in one contiguous allocation.
 ///
-/// It is like a list implemented with pointers, except instead of pointers we
+/// It is similar to a linked list in a language like C, except instead of pointers we
 /// use indices into a backing vector.
 ///
 /// ## Features
 ///
-/// O(1) insert and remove both at front and back. O(1) insert anywhere
-/// if you have a cursor to that position.
+/// * O(1) insert and remove both at front and back.
+/// * O(1) insert anywhere if you have a cursor to that position.
+/// * Only use of **unsafe** is an unavoidable use for **IterMut**.
+///
+/// ## To do
 ///
 /// Can be generic over the index type (not yet implemented), so that internal
 /// prev/node links can use less space than a regular pointer (can be u16 or u32 index).
 ///
-/// ## Discussion
-///
-/// Idea (not yet implemented): Fixate node positions at certain intervals,
-/// e.g. every 32nd node is always in its correct index in the backing vector??
-///
-/// With some cleanup we can use unchecked indexing for impl.
+/// With some cleanup we can use unchecked indexing for impl -- but it's actually
+/// unclear if it will give much speedup.
 ///
 #[derive(Clone, Debug)]
 pub struct List<T> {
@@ -104,11 +103,13 @@ impl<T> List<T>
         }
     }
 
+    /// Return the number of elements in the List.
     pub fn len(&self) -> usize
     {
         self.nodes.len()
     }
 
+    /// Return an iterator.
     pub fn iter(&self) -> Iter<T>
     {
         Iter {
@@ -119,6 +120,7 @@ impl<T> List<T>
         }
     }
 
+    /// Return an iterator.
     pub fn iter_mut(&mut self) -> IterMut<T>
     {
         IterMut {
@@ -129,6 +131,7 @@ impl<T> List<T>
         }
     }
 
+    /// Return a new cursor, focused before the head of the List.
     pub fn cursor(&mut self) -> Cursor<T>
     {
         Cursor {
@@ -137,6 +140,7 @@ impl<T> List<T>
         }
     }
 
+    /// Insert an element at the beginning of the List.
     pub fn push_front(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node::new(value, END, self.head);
@@ -148,6 +152,7 @@ impl<T> List<T>
         self.nodes.push(node);
     }
 
+    /// Insert an element at the end of the List.
     pub fn push_back(&mut self, value: T) {
         let index = self.nodes.len();
         let node = Node::new(value, self.tail, END);
@@ -208,6 +213,8 @@ impl<T> List<T>
         }
     }
 
+    /// Remove the element at the beginning of the List and return it,
+    /// or return **None** if the List is empty.
     pub fn pop_front(&mut self) -> Option<T>
     {
         if self.head == END {
@@ -228,6 +235,8 @@ impl<T> List<T>
         Some(removed_node.value)
     }
 
+    /// Remove the element at the end of the List and return it,
+    /// or return **None** if the List is empty.
     pub fn pop_back(&mut self) -> Option<T>
     {
         if self.tail == END {
@@ -248,7 +257,7 @@ impl<T> List<T>
         Some(removed_node.value)
     }
 
-    /// Reorder internal datastructure into traversal order
+    /// Reorder internal datastructure into traversal order.
     pub fn linearize(&mut self)
     {
         if self.len() == 0 {
