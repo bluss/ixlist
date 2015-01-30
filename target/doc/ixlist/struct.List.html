@@ -44,43 +44,80 @@
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>ixlist</a>::<wbr><a class='struct' href=''>List</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-193' href='../src/ixlist/lib.rs.html#40-44'>[src]</a></span></h1>
+        </span><a id='src-223' href='../src/ixlist/lib.rs.html#75-79'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct List&lt;T&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p><strong>List</strong> is a doubly linked list stored in one contiguous allocation.</p>
 
-<p>It is like a list implemented with pointers, except instead of pointers we
-use indices into a backing vector.</p>
-
 <h2 id="features" class='section-header'><a
                            href="#features">Features</a></h2>
-<p>O(1) insert and remove both at front and back. O(1) insert anywhere
-if you have a cursor to that position.</p>
+<ul>
+<li>O(1) insert and remove both at front and back.</li>
+<li>O(1) insert anywhere if you have a cursor to that position.</li>
+<li>Only use of <strong>unsafe</strong> is an unavoidable use for <strong>IterMut</strong>.</li>
+</ul>
 
-<p>Can be generic over the index type (not yet implemented), so that internal
+<h2 id="implementation" class='section-header'><a
+                           href="#implementation">Implementation</a></h2>
+<p>It is similar to a linked list in a language like C, except instead of pointers we
+use indices into a backing vector.</p>
+
+<p>The list is just a vector, and indices to the head and tail:</p>
+<pre id='rust-example-rendered' class='rust '>
+<span class='kw'>struct</span> <span class='ident'>List</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='doccomment'>/// Head, Tail</span>
+    <span class='ident'>link</span>: [<span class='ident'>usize</span>; <span class='number'>2</span>],
+    <span class='ident'>nodes</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>Node</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;&gt;</span>,
+}
+</pre>
+
+<p>The list node is represented like this:</p>
+<pre id='rust-example-rendered' class='rust '>
+<span class='kw'>struct</span> <span class='ident'>Node</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+    <span class='doccomment'>/// Prev, Next.</span>
+    <span class='ident'>link</span>: [<span class='ident'>usize</span>; <span class='number'>2</span>],
+    <span class='ident'>value</span>: <span class='ident'>T</span>,
+}
+</pre>
+
+<p>The <code>link</code> arrays contain the vector indices of the previous and next node. We
+use an array so that symmetries in front/back or prev/next can be used easily in the
+code — it&#39;s nice if we can write just one push and one pop method instead of two.</p>
+
+<h2 id="to-do" class='section-header'><a
+                           href="#to-do">To do</a></h2>
+<p>List could be generic over the index type, so that internal
 prev/node links can use less space than a regular pointer (can be u16 or u32 index).</p>
 
-<h2 id="discussion" class='section-header'><a
-                           href="#discussion">Discussion</a></h2>
-<p>Idea (not yet implemented): Fixate node positions at certain intervals,
-e.g. every 32nd node is always in its correct index in the backing vector??</p>
-
-<p>With some cleanup we can use unchecked indexing for impl.</p>
+<p>With some cleanup we can use unchecked indexing — but it&#39;s not guaranteed
+to make any difference.</p>
 </div><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;T&gt; <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h4>
 <div class='docblock'><p>Create a new <strong>List</strong>.</p>
 </div><h4 id='method.with_capacity' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.with_capacity' class='fnname'>with_capacity</a>(cap: <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h4>
 <div class='docblock'><p>Create a new <strong>List</strong> with specified capacity.</p>
 </div><h4 id='method.len' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.len' class='fnname'>len</a>(&amp;self) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
-<h4 id='method.iter' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.iter' class='fnname'>iter</a>(&amp;self) -&gt; <a class='struct' href='../ixlist/struct.Iter.html' title='ixlist::Iter'>Iter</a>&lt;T&gt;</code></h4>
-<h4 id='method.iter_mut' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.iter_mut' class='fnname'>iter_mut</a>(&amp;mut self) -&gt; <a class='struct' href='../ixlist/struct.IterMut.html' title='ixlist::IterMut'>IterMut</a>&lt;T&gt;</code></h4>
-<h4 id='method.cursor' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.cursor' class='fnname'>cursor</a>(&amp;mut self) -&gt; <a class='struct' href='../ixlist/struct.Cursor.html' title='ixlist::Cursor'>Cursor</a>&lt;T&gt;</code></h4>
-<h4 id='method.push_front' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.push_front' class='fnname'>push_front</a>(&amp;mut self, value: T)</code></h4>
-<h4 id='method.push_back' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.push_back' class='fnname'>push_back</a>(&amp;mut self, value: T)</code></h4>
-<h4 id='method.pop_front' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pop_front' class='fnname'>pop_front</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
-<h4 id='method.pop_back' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pop_back' class='fnname'>pop_back</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
-<h4 id='method.linearize' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.linearize' class='fnname'>linearize</a>(&amp;mut self)</code></h4>
-<div class='docblock'><p>Reorder internal datastructure into traversal order</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+<div class='docblock'><p>Return the number of elements in the List.</p>
+</div><h4 id='method.iter' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.iter' class='fnname'>iter</a>(&amp;self) -&gt; <a class='struct' href='../ixlist/struct.Iter.html' title='ixlist::Iter'>Iter</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Return an iterator.</p>
+</div><h4 id='method.iter_mut' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.iter_mut' class='fnname'>iter_mut</a>(&amp;mut self) -&gt; <a class='struct' href='../ixlist/struct.IterMut.html' title='ixlist::IterMut'>IterMut</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Return an iterator.</p>
+</div><h4 id='method.cursor' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.cursor' class='fnname'>cursor</a>(&amp;mut self) -&gt; <a class='struct' href='../ixlist/struct.Cursor.html' title='ixlist::Cursor'>Cursor</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Return a new cursor, focused before the head of the List.</p>
+</div><h4 id='method.push_front' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.push_front' class='fnname'>push_front</a>(&amp;mut self, value: T)</code></h4>
+<div class='docblock'><p>Insert an element at the beginning of the List.</p>
+</div><h4 id='method.push_back' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.push_back' class='fnname'>push_back</a>(&amp;mut self, value: T)</code></h4>
+<div class='docblock'><p>Insert an element at the end of the List.</p>
+</div><h4 id='method.pop_front' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pop_front' class='fnname'>pop_front</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Remove the element at the beginning of the List and return it,
+or return <strong>None</strong> if the List is empty.</p>
+</div><h4 id='method.pop_back' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pop_back' class='fnname'>pop_back</a>(&amp;mut self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;T&gt;</code></h4>
+<div class='docblock'><p>Remove the element at the end of the List and return it,
+or return <strong>None</strong> if the List is empty.</p>
+</div><h4 id='method.linearize' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.linearize' class='fnname'>linearize</a>(&amp;mut self)</code></h4>
+<div class='docblock'><p>Reorder internal datastructure into traversal order.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;'a, T&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/iter/trait.FromIterator.html' title='core::iter::FromIterator'>FromIterator</a>&lt;T&gt; for <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.from_iter' class='method'><a class='stability Unstable' title='Unstable'></a><code>fn <a href='#method.from_iter' class='fnname'>from_iter</a>&lt;I&gt;(iter: I) -&gt; <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt; <span class='where'>where I: <a class='trait' href='http://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html' title='core::iter::Iterator'>Iterator</a>&lt;Item=T&gt;</span></code></h4>
+</div><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;'a, T&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/iter/trait.Extend.html' title='core::iter::Extend'>Extend</a>&lt;T&gt; for <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.extend' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='#method.extend' class='fnname'>extend</a>&lt;I&gt;(&amp;mut self, iter: I) <span class='where'>where I: <a class='trait' href='http://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html' title='core::iter::Iterator'>Iterator</a>&lt;Item=T&gt;</span></code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><a class='stability Unstable' title='Unstable: I/O and core have yet to be reconciled'></a><code>fn <a href='#method.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
 </div><h3 class='impl'><a class='stability Stable' title='Stable'></a><code>impl&lt;T: <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a>&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h3><div class='impl-items'><h4 id='method.clone' class='method'><a class='stability Stable' title='Stable'></a><code>fn <a href='#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../ixlist/struct.List.html' title='ixlist::List'>List</a>&lt;T&gt;</code></h4>
 <h4 id='method.clone_from' class='tymethod'><a class='stability Unstable' title='Unstable: this function is rarely used'></a><code>fn <a href='#tymethod.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
 </div></section>
