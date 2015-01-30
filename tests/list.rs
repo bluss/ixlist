@@ -130,3 +130,24 @@ fn cursor()
     assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1, -1, 0]);
     assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![0, -1, 1]);
 }
+
+#[test]
+fn extend()
+{
+    let mut l = List::new();
+    l.push_front(1);
+    l.extend(2..2);
+    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1]);
+    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![1]);
+
+    l.extend(2..5);
+    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1, 2, 3, 4]);
+    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![4, 3, 2, 1]);
+}
+
+#[test]
+fn from_iter()
+{
+    let l: List<_> = (0..5).collect();
+    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
+}
