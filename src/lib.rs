@@ -46,9 +46,15 @@ impl<T> Node<T> {
 ///
 #[derive(Clone, Debug)]
 pub struct List<T> {
-    head: usize,
-    tail: usize,
+    /// Head, Tail
+    link: [usize; 2],
     nodes: Vec<Node<T>>,
+}
+
+/// Represent one of the two ends of the list
+enum Terminal {
+    Head = 0,
+    Tail = 1,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -99,9 +105,12 @@ impl<T> List<T>
     pub fn with_capacity(cap: usize) -> Self
     {
         List{
-            head: END, tail: END, nodes: Vec::with_capacity(cap),
+            link: [END; 2], nodes: Vec::with_capacity(cap),
         }
     }
+
+    fn head(&self) -> usize { self.link[0] }
+    fn tail(&self) -> usize { self.link[1] }
 
     /// Return the number of elements in the List.
     pub fn len(&self) -> usize
@@ -113,9 +122,9 @@ impl<T> List<T>
     pub fn iter(&self) -> Iter<T>
     {
         Iter {
+            head: self.head(),
+            tail: self.tail(),
             nodes: &*self.nodes,
-            head: self.head,
-            tail: self.tail,
             taken: 0,
         }
     }
@@ -124,9 +133,9 @@ impl<T> List<T>
     pub fn iter_mut(&mut self) -> IterMut<T>
     {
         IterMut {
+            head: self.head(),
+            tail: self.tail(),
             nodes: &mut *self.nodes,
-            head: self.head,
-            tail: self.tail,
             taken: 0,
         }
     }
@@ -135,33 +144,34 @@ impl<T> List<T>
     pub fn cursor(&mut self) -> Cursor<T>
     {
         Cursor {
-            pos: self.head,
+            pos: self.head(),
             list: self,
         }
     }
 
+    fn push_terminal(&mut self, value: T, term: Terminal)
+    {
+        let t = term as usize;
+        let index = self.nodes.len();
+        let mut node = Node::new(value, END, END);
+        node.link[1 - t] = self.link[t];
+
+        match self.nodes.get_mut(self.link[t]) {
+            None => self.link[1 - t] = index, // List was empty
+            Some(n) => n.link[t] = index,
+        }
+        self.link[t] = index;
+        self.nodes.push(node);
+    }
+
     /// Insert an element at the beginning of the List.
     pub fn push_front(&mut self, value: T) {
-        let index = self.nodes.len();
-        let node = Node::new(value, END, self.head);
-        match self.nodes.get_mut(self.head) {
-            None => self.tail = index, // head is END
-            Some(n) => n.set_prev(index),
-        }
-        self.head = index;
-        self.nodes.push(node);
+        self.push_terminal(value, Terminal::Head)
     }
 
     /// Insert an element at the end of the List.
     pub fn push_back(&mut self, value: T) {
-        let index = self.nodes.len();
-        let node = Node::new(value, self.tail, END);
-        match self.nodes.get_mut(self.tail) {
-            None => self.head = index, // tail is END
-            Some(n) => n.set_next(index),
-        }
-        self.tail = index;
-        self.nodes.push(node);
+        self.push_terminal(value, Terminal::Tail)
     }
 
     /// "unlink" the node at idx
@@ -205,28 +215,28 @@ impl<T> List<T>
         }
 
         self.prepare_move(moved_index, free_spot);
-        if self.head == moved_index {
-            self.head = free_spot;
+        if self.head() == moved_index {
+            self.link[0] = free_spot;
         }
-        if self.tail == moved_index {
-            self.tail = free_spot;
+        if self.tail() == moved_index {
+            self.link[1] = free_spot;
         }
     }
 
-    /// Remove the element at the beginning of the List and return it,
-    /// or return **None** if the List is empty.
-    pub fn pop_front(&mut self) -> Option<T>
+    /// Remove the element at either head or tail
+    fn pop_terminal(&mut self, term: Terminal) -> Option<T>
     {
-        if self.head == END {
+        let t = term as usize;
+        if self.link[t] == END {
             return None
         }
-        let h = self.head;
-        let new_head = self.nodes[h].next();
+        let h = self.link[t];
+        let new_terminal = self.nodes[h].link[1 - t];
         self.prepare_remove(h);
 
-        self.head = new_head;
-        if self.head == END {
-            self.tail = END;
+        self.link[t] = new_terminal;
+        if self.link[t] == END {
+            self.link[1 - t] = END;
         } else {
             let moved_index = self.nodes.len() - 1; // last index moves.
             self.prepare_swap(h, moved_index);
@@ -235,26 +245,18 @@ impl<T> List<T>
         Some(removed_node.value)
     }
 
+    /// Remove the element at the beginning of the List and return it,
+    /// or return **None** if the List is empty.
+    pub fn pop_front(&mut self) -> Option<T>
+    {
+        self.pop_terminal(Terminal::Head)
+    }
+
     /// Remove the element at the end of the List and return it,
     /// or return **None** if the List is empty.
     pub fn pop_back(&mut self) -> Option<T>
     {
-        if self.tail == END {
-            return None
-        }
-        let t = self.tail;
-        let new_tail = self.nodes[t].prev();
-        self.prepare_remove(t);
-
-        self.tail = new_tail;
-        if self.tail == END {
-            self.head = END;
-        } else {
-            let moved_index = self.nodes.len() - 1; // last index moves.
-            self.prepare_swap(t, moved_index);
-        }
-        let removed_node = self.nodes.swap_remove(t);
-        Some(removed_node.value)
+        self.pop_terminal(Terminal::Tail)
     }
 
     /// Reorder internal datastructure into traversal order.
@@ -265,7 +267,7 @@ impl<T> List<T>
         }
 
         // First label every node by their index + 1 in the next slot
-        let mut head = self.head;
+        let mut head = self.head();
         let mut index = 0;
         while let Some(n) = self.nodes.get_mut(head) {
             index += 1;
@@ -281,10 +283,10 @@ impl<T> List<T>
         for (index, node) in self.nodes[1..].iter_mut().enumerate() {
             node.set_prev(index);
         }
-        self.head = 0;
-        self.tail = self.len() - 1;
-        self.nodes[self.head].set_prev(END);
-        self.nodes[self.tail].set_next(END);
+        self.link[0] = 0;
+        self.link[1] = self.len() - 1;
+        self.nodes[self.link[0]].set_prev(END);
+        self.nodes[self.link[1]].set_next(END);
     }
 }
 
@@ -305,7 +307,7 @@ impl<'a, T> Extend<T> for List<T>
     {
         let (low, _) = iter.size_hint();
         self.nodes.reserve(low);
-        let tail = self.tail;
+        let tail = self.tail();
         let index = self.nodes.len();
 
         // pick the first to set prev to tail
@@ -324,12 +326,12 @@ impl<'a, T> Extend<T> for List<T>
             return;
         }
 
-        match self.nodes.get_mut(self.tail) {
-            None => self.head = index, // List was empty
+        match self.nodes.get_mut(self.link[1]) {
+            None => self.link[0] = index, // List was empty
             Some(tailn) => tailn.set_next(index),
         }
-        self.tail = self.nodes.len() - 1;
-        self.nodes[self.tail].set_next(END);
+        self.link[1] = self.nodes.len() - 1;
+        self.nodes[self.link[1]].set_next(END);
     }
 }
 
@@ -458,7 +460,7 @@ impl<'a, T: 'a> Cursor<'a, T>
     {
         match self.list.nodes.get_mut(self.pos) {
             None => {
-                self.pos = self.list.head;
+                self.pos = self.list.link[0];
                 None
             }
             Some(n) => {
@@ -474,14 +476,14 @@ impl<'a, T: 'a> Cursor<'a, T>
     /// another call to *.prev()* returns the last element of the list.
     pub fn prev(&mut self) -> Option<&mut T>
     {
-        if self.pos == self.list.head {
+        if self.pos == self.list.head() {
             // jump back from head to one past the end, just like gankro's cursor
             self.pos = END;
             return None;
         }
         let prev = 
             match self.list.nodes.get(self.pos) {
-                None => self.list.tail,
+                None => self.list.tail(),
                 Some(n) => n.prev(),
             };
         match self.list.nodes.get_mut(prev) {
@@ -501,7 +503,7 @@ impl<'a, T: 'a> Cursor<'a, T>
         if self.pos == END {
             self.list.push_back(value);
             self.pos = index;
-        } else if self.pos == self.list.head {
+        } else if self.pos == self.list.head() {
             self.list.push_front(value);
             self.pos = index;
         } else {
@@ -509,7 +511,7 @@ impl<'a, T: 'a> Cursor<'a, T>
             let node = Node::new(value, prev, self.pos);
 
             match self.list.nodes.get_mut(prev) {
-                None => self.list.head = index, // prev is END
+                None => self.list.link[0] = index, // prev is END
                 Some(n) => n.set_next(index),
             }
             self.list.nodes[self.pos].set_prev(index);
@@ -521,10 +523,10 @@ impl<'a, T: 'a> Cursor<'a, T>
     pub fn seek(&mut self, offset: Seek)
     {
         match offset {
-            Seek::Head => self.pos = self.list.head,
+            Seek::Head => self.pos = self.list.head(),
             Seek::Tail => self.pos = END,
             Seek::Forward(n) => for _ in (0..n) { if self.pos == END { break; } self.next(); },
-            Seek::Backward(n) => for _ in (0..n) { if self.pos == self.list.head { break; } self.prev(); }
+            Seek::Backward(n) => for _ in (0..n) { if self.pos == self.list.head() { break; } self.prev(); }
         }
     }
 }
