@@ -63,6 +63,10 @@ impl<T> Node<T> {
 /// use an array so that symmetries in front/back or prev/next can be used easily in the
 /// code — it's nice if we can write just one push and one pop method instead of two.
 ///
+/// There is a constant to denote a “null” index, and that's usize's max value.
+/// We don't always have to check for this case, we can just access the nodes
+/// vector using *.get()* or *.get_mut()*; a “null” link is the **None** case.
+///
 /// ## To do
 ///
 /// List could be generic over the index type, so that internal
