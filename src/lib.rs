@@ -52,6 +52,7 @@ pub struct List<T> {
 }
 
 /// Represent one of the two ends of the list
+#[derive(Copy, Clone, PartialEq, Debug)]
 enum Terminal {
     Head = 0,
     Tail = 1,
@@ -60,8 +61,7 @@ enum Terminal {
 #[derive(Copy, Clone, Debug)]
 pub struct Iter<'a, T: 'a>
 {
-    head: usize,
-    tail: usize,
+    link: [usize; 2],
     nodes: &'a [Node<T>],
     taken: usize,
 }
@@ -69,8 +69,7 @@ pub struct Iter<'a, T: 'a>
 #[derive(Debug)]
 pub struct IterMut<'a, T: 'a>
 {
-    head: usize,
-    tail: usize,
+    link: [usize; 2],
     nodes: &'a mut [Node<T>],
     taken: usize,
 }
@@ -122,8 +121,7 @@ impl<T> List<T>
     pub fn iter(&self) -> Iter<T>
     {
         Iter {
-            head: self.head(),
-            tail: self.tail(),
+            link: self.link,
             nodes: &*self.nodes,
             taken: 0,
         }
@@ -133,8 +131,7 @@ impl<T> List<T>
     pub fn iter_mut(&mut self) -> IterMut<T>
     {
         IterMut {
-            head: self.head(),
-            tail: self.tail(),
+            link: self.link,
             nodes: &mut *self.nodes,
             taken: 0,
         }
@@ -335,26 +332,32 @@ impl<'a, T> Extend<T> for List<T>
     }
 }
 
-impl<'a, T: 'a> Iterator for Iter<'a, T>
+impl<'a, T: 'a> Iter<'a, T>
 {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<&'a T>
+    /// Step the iterator from the head or tail
+    fn next_terminal(&mut self, term: Terminal) -> Option<&'a T>
     {
-        match self.nodes.get(self.head) {
+        let t = term as usize;
+        match self.nodes.get(self.link[t]) {
             None => None,
             Some(n) => {
                 self.taken += 1;
-                if self.head == self.tail {
-                    self.head = END;
-                    self.tail = END;
+                if self.link[t] == self.link[1 - t] {
+                    self.link = [END, END];
                 } else {
-                    self.head = n.next();
+                    self.link[t] = n.link[1 - t];
                 }
                 Some(&n.value)
             }
         }
     }
+}
+
+impl<'a, T: 'a> Iterator for Iter<'a, T>
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> { self.next_terminal(Terminal::Head) }
 
     fn size_hint(&self) -> (usize, Option<usize>)
     {
@@ -365,42 +368,24 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
 
 impl<'a, T: 'a> DoubleEndedIterator for Iter<'a, T>
 {
-    fn next_back(&mut self) -> Option<&'a T>
-    {
-        match self.nodes.get(self.tail) {
-            None => None,
-            Some(n) => {
-                self.taken += 1;
-                if self.head == self.tail {
-                    self.head = END;
-                    self.tail = END;
-                } else {
-                    self.tail = n.prev();
-                }
-
-                Some(&n.value)
-            }
-        }
-    }
+    fn next_back(&mut self) -> Option<&'a T> { self.next_terminal(Terminal::Tail) }
 }
 
 
-
-impl<'a, T: 'a> Iterator for IterMut<'a, T>
+impl<'a, T: 'a> IterMut<'a, T>
 {
-    type Item = &'a mut T;
-
-    fn next(&mut self) -> Option<&'a mut T>
+    /// Step the iterator from the head or tail
+    fn next_terminal(&mut self, term: Terminal) -> Option<&'a mut T>
     {
-        match self.nodes.get_mut(self.head) {
+        let t = term as usize;
+        match self.nodes.get_mut(self.link[t]) {
             None => None,
             Some(n) => {
                 self.taken += 1;
-                if self.head == self.tail {
-                    self.head = END;
-                    self.tail = END;
+                if self.link[t] == self.link[1 - t] {
+                    self.link = [END, END];
                 } else {
-                    self.head = n.next();
+                    self.link[t] = n.link[1 - t];
                 }
 
                 // We cannot in safe rust, derive a &'a mut from &mut self,
@@ -417,6 +402,13 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
             }
         }
     }
+}
+
+impl<'a, T: 'a> Iterator for IterMut<'a, T>
+{
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<&'a mut T> { self.next_terminal(Terminal::Head) }
 
     fn size_hint(&self) -> (usize, Option<usize>)
     {
@@ -427,27 +419,7 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
 
 impl<'a, T: 'a> DoubleEndedIterator for IterMut<'a, T>
 {
-    fn next_back(&mut self) -> Option<&'a mut T>
-    {
-        match self.nodes.get_mut(self.tail) {
-            None => None,
-            Some(n) => {
-                self.taken += 1;
-                if self.head == self.tail {
-                    self.head = END;
-                    self.tail = END;
-                } else {
-                    self.tail = n.prev();
-                }
-
-                // See .next() above
-                let long_life_value = unsafe {
-                    &mut *(&mut n.value as *mut _)
-                };
-                Some(long_life_value)
-            }
-        }
-    }
+    fn next_back(&mut self) -> Option<&'a mut T> { self.next_terminal(Terminal::Tail) }
 }
 
 impl<'a, T: 'a> Cursor<'a, T>
