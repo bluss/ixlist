@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 type Ix = usize;
 /// **END** is the "null" pointer of the link indexes
 const END: usize = std::usize::MAX;
@@ -273,6 +275,51 @@ impl<T> List<T>
         self.head = 0;
         self.tail = self.len() - 1;
         self.nodes[self.head].set_prev(END);
+        self.nodes[self.tail].set_next(END);
+    }
+}
+
+impl<'a, T> FromIterator<T> for List<T>
+{
+    fn from_iter<I>(iter: I) -> Self
+        where I: Iterator<Item=T>
+    {
+        let mut result = List::new();
+        result.extend(iter);
+        result
+    }
+}
+
+impl<'a, T> Extend<T> for List<T>
+{
+    fn extend<I>(&mut self, mut iter: I) where I: Iterator<Item=T>
+    {
+        let (low, _) = iter.size_hint();
+        self.nodes.reserve(low);
+        let tail = self.tail;
+        let index = self.nodes.len();
+
+        // pick the first to set prev to tail
+        for elt in iter {
+            let node = Node::new(elt, tail, index + 1);
+            self.nodes.push(node);
+            break;
+        }
+
+        for (i, elt) in iter.enumerate() {
+            let node = Node::new(elt, index + i, index + i + 2);
+            self.nodes.push(node);
+        }
+
+        if self.nodes.len() == 0 {
+            return;
+        }
+
+        match self.nodes.get_mut(self.tail) {
+            None => self.head = index, // List was empty
+            Some(tailn) => tailn.set_next(index),
+        }
+        self.tail = self.nodes.len() - 1;
         self.nodes[self.tail].set_next(END);
     }
 }
