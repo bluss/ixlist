@@ -596,6 +596,10 @@
 <span id="554">554</span>
 <span id="555">555</span>
 <span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>iter</span>::<span class='ident'>FromIterator</span>;
 
@@ -661,6 +665,10 @@
 <span class='doccomment'>/// The `link` arrays contain the vector indices of the previous and next node. We</span>
 <span class='doccomment'>/// use an array so that symmetries in front/back or prev/next can be used easily in the</span>
 <span class='doccomment'>/// code — it&#39;s nice if we can write just one push and one pop method instead of two.</span>
+<span class='doccomment'>///</span>
+<span class='doccomment'>/// There is a constant to denote a “null” index, and that&#39;s usize&#39;s max value.</span>
+<span class='doccomment'>/// We don&#39;t always have to check for this case, we can just access the nodes</span>
+<span class='doccomment'>/// vector using *.get()* or *.get_mut()*; a “null” link is the **None** case.</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// ## To do</span>
 <span class='doccomment'>///</span>

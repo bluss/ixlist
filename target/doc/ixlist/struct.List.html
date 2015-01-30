@@ -44,7 +44,7 @@
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>ixlist</a>::<wbr><a class='struct' href=''>List</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]
             </a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-223' href='../src/ixlist/lib.rs.html#75-79'>[src]</a></span></h1>
+        </span><a id='src-223' href='../src/ixlist/lib.rs.html#79-83'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct List&lt;T&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p><strong>List</strong> is a doubly linked list stored in one contiguous allocation.</p>
@@ -83,6 +83,10 @@ use indices into a backing vector.</p>
 <p>The <code>link</code> arrays contain the vector indices of the previous and next node. We
 use an array so that symmetries in front/back or prev/next can be used easily in the
 code — it&#39;s nice if we can write just one push and one pop method instead of two.</p>
+
+<p>There is a constant to denote a “null” index, and that&#39;s usize&#39;s max value.
+We don&#39;t always have to check for this case, we can just access the nodes
+vector using <em>.get()</em> or <em>.get_mut()</em>; a “null” link is the <strong>None</strong> case.</p>
 
 <h2 id="to-do" class='section-header'><a
                            href="#to-do">To do</a></h2>
