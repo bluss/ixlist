@@ -357,6 +357,8 @@ impl<'a, T: 'a> Iter<'a, T>
         match self.nodes.get(self.link[h]) {
             None => None,
             Some(n) => {
+                // Extract `elt` already here, to avoid spurious null check for elt
+                let elt = Some(&n.value);
                 self.taken += 1;
                 if self.link[h] == self.link[t] {
                     self.link[0] = END;
@@ -364,7 +366,7 @@ impl<'a, T: 'a> Iter<'a, T>
                 } else {
                     self.link[h] = n.link[t];
                 }
-                Some(&n.value)
+                elt
             }
         }
     }
@@ -396,17 +398,11 @@ impl<'a, T: 'a> IterMut<'a, T>
     /// Step the iterator from the head or tail
     fn next_terminal(&mut self, term: Terminal) -> Option<&'a mut T>
     {
-        let t = term as usize;
-        match self.nodes.get_mut(self.link[t]) {
+        let h = term.index();
+        let t = term.opposite().index();
+        match self.nodes.get_mut(self.link[h]) {
             None => None,
             Some(n) => {
-                self.taken += 1;
-                if self.link[t] == self.link[1 - t] {
-                    self.link = [END, END];
-                } else {
-                    self.link[t] = n.link[1 - t];
-                }
-
                 // We cannot in safe rust, derive a &'a mut from &mut self,
                 // when the life of &mut self is shorter than 'a.
                 //
@@ -417,7 +413,15 @@ impl<'a, T: 'a> IterMut<'a, T>
                 let long_life_value = unsafe {
                     &mut *(&mut n.value as *mut _)
                 };
-                Some(long_life_value)
+                let elt = Some(long_life_value);
+
+                self.taken += 1;
+                if self.link[h] == self.link[t] {
+                    self.link = [END, END];
+                } else {
+                    self.link[h] = n.link[t];
+                }
+                elt
             }
         }
     }
