@@ -1,19 +1,26 @@
 type Ix = usize;
 /// **END** is the "null" pointer of the link indexes
-const END: usize = -1us;
+const END: usize = std::usize::MAX;
 
 #[derive(Clone, Debug)]
 pub struct Node<T> {
     pub value: T,
     /// Prev, Next.
-    link: [usize; 2],
+    link: [Ix; 2],
 }
 
 impl<T> Node<T> {
+    fn new(value: T, prev: Ix, next: Ix) -> Self
+    {
+        Node {
+            value: value,
+            link: [prev, next],
+        }
+    }
     fn prev(&self) -> Ix { self.link[0] }
     fn next(&self) -> Ix { self.link[1] }
-    fn prev_mut(&mut self) -> &mut Ix { &mut self.link[0] }
-    fn next_mut(&mut self) -> &mut Ix { &mut self.link[1] }
+    fn set_prev(&mut self, index: Ix) { self.link[0] = index; }
+    fn set_next(&mut self, index: Ix) { self.link[1] = index; }
 }
 
 /// **List** is a doubly linked list stored in one contiguous allocation.
@@ -130,10 +137,10 @@ impl<T> List<T>
 
     pub fn push_front(&mut self, value: T) {
         let index = self.nodes.len();
-        let node = Node{value: value, link: [END, self.head]};
+        let node = Node::new(value, END, self.head);
         match self.nodes.get_mut(self.head) {
             None => self.tail = index, // head is END
-            Some(n) => *n.prev_mut() = index,
+            Some(n) => n.set_prev(index),
         }
         self.head = index;
         self.nodes.push(node);
@@ -141,10 +148,10 @@ impl<T> List<T>
 
     pub fn push_back(&mut self, value: T) {
         let index = self.nodes.len();
-        let node = Node{value: value, link: [self.tail, END]};
+        let node = Node::new(value, self.tail, END);
         match self.nodes.get_mut(self.tail) {
             None => self.head = index, // tail is END
-            Some(n) => *n.next_mut() = index,
+            Some(n) => n.set_next(index),
         }
         self.tail = index;
         self.nodes.push(node);
@@ -157,11 +164,11 @@ impl<T> List<T>
         let next = self.nodes[idx].next();
         match self.nodes.get_mut(prev) {
             None => {}
-            Some(n) => *n.next_mut() = next,
+            Some(n) => n.set_next(next),
         }
         match self.nodes.get_mut(next) {
             None => {}
-            Some(n) => *n.prev_mut() = prev,
+            Some(n) => n.set_prev(prev),
         }
     }
 
@@ -172,11 +179,11 @@ impl<T> List<T>
         let next = self.nodes[idx].next();
         match self.nodes.get_mut(prev) {
             None => {}
-            Some(n) => *n.next_mut() = to_index,
+            Some(n) => n.set_next(to_index),
         }
         match self.nodes.get_mut(next) {
             None => {}
-            Some(n) => *n.prev_mut() = to_index,
+            Some(n) => n.set_prev(to_index),
         }
     }
 
@@ -252,7 +259,7 @@ impl<T> List<T>
         while let Some(n) = self.nodes.get_mut(head) {
             index += 1;
             head = n.next();
-            *n.next_mut() = index;
+            n.set_next(index);
         }
 
         // sort by index
@@ -261,12 +268,12 @@ impl<T> List<T>
         // iterate and re-label in order
         // prev's need update, all the next links except the last should be ok.
         for (index, node) in self.nodes[1..].iter_mut().enumerate() {
-            *node.prev_mut() = index;
+            node.set_prev(index);
         }
         self.head = 0;
         self.tail = self.len() - 1;
-        *self.nodes[self.head].prev_mut() = END;
-        *self.nodes[self.tail].next_mut() = END;
+        self.nodes[self.head].set_prev(END);
+        self.nodes[self.tail].set_next(END);
     }
 }
 
@@ -443,13 +450,13 @@ impl<'a, T: 'a> Cursor<'a, T>
             self.pos = index;
         } else {
             let prev = self.list.nodes[self.pos].prev();
-            let node = Node{value: value, link: [prev, self.pos]};
+            let node = Node::new(value, prev, self.pos);
 
             match self.list.nodes.get_mut(prev) {
                 None => self.list.head = index, // prev is END
-                Some(n) => *n.next_mut() = index,
+                Some(n) => n.set_next(index),
             }
-            *self.list.nodes[self.pos].prev_mut() = index;
+            self.list.nodes[self.pos].set_prev(index);
             self.list.nodes.push(node);
             self.pos = index;
         }
