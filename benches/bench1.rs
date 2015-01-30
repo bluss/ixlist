@@ -1,6 +1,7 @@
 extern crate ixlist;
 extern crate test;
 
+use std::rand::{self, Rng};
 use std::collections::{DList, RingBuf};
 use ixlist::{
     List,
@@ -76,3 +77,65 @@ fn push_front_list_cap(b: &mut test::Bencher)
     })
 }
 
+#[bench]
+fn iterate_dlist(b: &mut test::Bencher)
+{
+    let mut dl = DList::new();
+    let n = 1000;
+    let mut rng = rand::weak_rng();
+    for _ in (0..n) {
+        if rng.gen() {
+            dl.push_front(test::black_box(1));
+        } else {
+            dl.push_back(test::black_box(1));
+        }
+    }
+    b.iter(|| {
+        for elt in dl.iter() {
+            test::black_box(elt);
+        }
+    })
+}
+
+#[bench]
+fn iterate_ringbuf(b: &mut test::Bencher)
+{
+    let mut dl = RingBuf::new();
+    let n = 1000;
+    let mut rng = rand::weak_rng();
+    // scramble a bit so we get a random access iteration
+    for _ in (0..n) {
+        if rng.gen() {
+            dl.push_front(test::black_box(1));
+        } else {
+            dl.push_back(test::black_box(1));
+        }
+    }
+    b.iter(|| {
+        for elt in dl.iter() {
+            test::black_box(elt);
+        }
+    })
+}
+
+
+#[bench]
+fn iterate_list(b: &mut test::Bencher)
+{
+    let mut dl = List::new();
+    let n = 1000;
+    let mut rng = rand::weak_rng();
+    // scramble a bit so we get a random access iteration
+    for _ in (0..n) {
+        if rng.gen() {
+            dl.push_front(test::black_box(1));
+        } else {
+            dl.push_back(test::black_box(1));
+        }
+    }
+    b.iter(|| {
+        for elt in dl.iter() {
+            test::black_box(elt);
+        }
+    })
+}
