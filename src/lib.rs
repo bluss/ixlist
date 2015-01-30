@@ -58,6 +58,21 @@ enum Terminal {
     Tail = 1,
 }
 
+impl Terminal
+{
+    #[inline]
+    pub fn opposite(&self) -> Self
+    {
+        match *self {
+            Terminal::Head => Terminal::Tail,
+            Terminal::Tail => Terminal::Head,
+        }
+    }
+
+    #[inline]
+    pub fn index(&self) -> usize { *self as usize }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub struct Iter<'a, T: 'a>
 {
@@ -337,15 +352,17 @@ impl<'a, T: 'a> Iter<'a, T>
     /// Step the iterator from the head or tail
     fn next_terminal(&mut self, term: Terminal) -> Option<&'a T>
     {
-        let t = term as usize;
-        match self.nodes.get(self.link[t]) {
+        let h = term.index();
+        let t = term.opposite().index();
+        match self.nodes.get(self.link[h]) {
             None => None,
             Some(n) => {
                 self.taken += 1;
-                if self.link[t] == self.link[1 - t] {
-                    self.link = [END, END];
+                if self.link[h] == self.link[t] {
+                    self.link[0] = END;
+                    self.link[1] = END;
                 } else {
-                    self.link[t] = n.link[1 - t];
+                    self.link[h] = n.link[t];
                 }
                 Some(&n.value)
             }
@@ -357,6 +374,7 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
 {
     type Item = &'a T;
 
+    #[inline]
     fn next(&mut self) -> Option<&'a T> { self.next_terminal(Terminal::Head) }
 
     fn size_hint(&self) -> (usize, Option<usize>)
@@ -368,6 +386,7 @@ impl<'a, T: 'a> Iterator for Iter<'a, T>
 
 impl<'a, T: 'a> DoubleEndedIterator for Iter<'a, T>
 {
+    #[inline]
     fn next_back(&mut self) -> Option<&'a T> { self.next_terminal(Terminal::Tail) }
 }
 
@@ -408,6 +427,7 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
 {
     type Item = &'a mut T;
 
+    #[inline]
     fn next(&mut self) -> Option<&'a mut T> { self.next_terminal(Terminal::Head) }
 
     fn size_hint(&self) -> (usize, Option<usize>)
@@ -419,6 +439,7 @@ impl<'a, T: 'a> Iterator for IterMut<'a, T>
 
 impl<'a, T: 'a> DoubleEndedIterator for IterMut<'a, T>
 {
+    #[inline]
     fn next_back(&mut self) -> Option<&'a mut T> { self.next_terminal(Terminal::Tail) }
 }
 
