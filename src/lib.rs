@@ -6,9 +6,9 @@ const END: usize = std::usize::MAX;
 
 #[derive(Clone, Debug)]
 pub struct Node<T> {
-    pub value: T,
     /// Prev, Next.
     link: [usize; 2],
+    pub value: T,
 }
 
 impl<T> Node<T> {
@@ -27,22 +27,49 @@ impl<T> Node<T> {
 
 /// **List** is a doubly linked list stored in one contiguous allocation.
 ///
-/// It is similar to a linked list in a language like C, except instead of pointers we
-/// use indices into a backing vector.
-///
 /// ## Features
 ///
 /// * O(1) insert and remove both at front and back.
 /// * O(1) insert anywhere if you have a cursor to that position.
 /// * Only use of **unsafe** is an unavoidable use for **IterMut**.
 ///
+///
+/// ## Implementation
+///
+/// It is similar to a linked list in a language like C, except instead of pointers we
+/// use indices into a backing vector.
+///
+/// The list is just a vector, and indices to the head and tail:
+///
+/// ```ignore
+/// struct List<T> {
+///     /// Head, Tail
+///     link: [usize; 2],
+///     nodes: Vec<Node<T>>,
+/// }
+/// ```
+///
+/// The list node is represented like this:
+///
+/// ```ignore
+/// struct Node<T> {
+///     /// Prev, Next.
+///     link: [usize; 2],
+///     value: T,
+/// }
+/// ```
+///
+/// The `link` arrays contain the vector indices of the previous and next node. We
+/// use an array so that symmetries in front/back or prev/next can be used easily in the
+/// code — it's nice if we can write just one push and one pop method instead of two.
+///
 /// ## To do
 ///
-/// Can be generic over the index type (not yet implemented), so that internal
+/// List could be generic over the index type, so that internal
 /// prev/node links can use less space than a regular pointer (can be u16 or u32 index).
 ///
-/// With some cleanup we can use unchecked indexing for impl -- but it's actually
-/// unclear if it will give much speedup.
+/// With some cleanup we can use unchecked indexing — but it's not guaranteed
+/// to make any difference.
 ///
 #[derive(Clone, Debug)]
 pub struct List<T> {
