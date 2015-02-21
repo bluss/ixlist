@@ -1,5 +1,6 @@
 #![feature(core)]
 
+use std::iter::IntoIterator;
 use std::iter::FromIterator;
 
 type Ix = usize;
@@ -338,7 +339,7 @@ impl<T> List<T>
 impl<'a, T> FromIterator<T> for List<T>
 {
     fn from_iter<I>(iter: I) -> Self
-        where I: Iterator<Item=T>
+        where I: IntoIterator<Item=T>
     {
         let mut result = List::new();
         result.extend(iter);
@@ -348,8 +349,9 @@ impl<'a, T> FromIterator<T> for List<T>
 
 impl<'a, T> Extend<T> for List<T>
 {
-    fn extend<I>(&mut self, mut iter: I) where I: Iterator<Item=T>
+    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=T>
     {
+        let mut iter = iter.into_iter();
         let (low, _) = iter.size_hint();
         self.nodes.reserve(low);
         let tail = self.tail();
