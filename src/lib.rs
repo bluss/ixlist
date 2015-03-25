@@ -1,4 +1,3 @@
-#![feature(core)]
 
 use std::iter::IntoIterator;
 use std::iter::FromIterator;
