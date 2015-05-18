@@ -1,3 +1,5 @@
+
+use std::iter::IntoIterator;
 use std::iter::FromIterator;
 
 type Ix = usize;
@@ -129,7 +131,7 @@ pub struct Cursor<'a, T: 'a>
     list: &'a mut List<T>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Seek {
     /// Seek forward *n* steps, or at most to the end.
     Forward(usize),
@@ -336,7 +338,7 @@ impl<T> List<T>
 impl<'a, T> FromIterator<T> for List<T>
 {
     fn from_iter<I>(iter: I) -> Self
-        where I: Iterator<Item=T>
+        where I: IntoIterator<Item=T>
     {
         let mut result = List::new();
         result.extend(iter);
@@ -346,15 +348,16 @@ impl<'a, T> FromIterator<T> for List<T>
 
 impl<'a, T> Extend<T> for List<T>
 {
-    fn extend<I>(&mut self, mut iter: I) where I: Iterator<Item=T>
+    fn extend<I>(&mut self, iter: I) where I: IntoIterator<Item=T>
     {
+        let mut iter = iter.into_iter();
         let (low, _) = iter.size_hint();
         self.nodes.reserve(low);
         let tail = self.tail();
         let index = self.nodes.len();
 
         // pick the first to set prev to tail
-        for elt in iter {
+        for elt in iter.by_ref() {
             let node = Node::new(elt, tail, index + 1);
             self.nodes.push(node);
             break;

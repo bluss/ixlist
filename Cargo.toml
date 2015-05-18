@@ -3,3 +3,7 @@
 name = "ixlist"
 version = "0.0.1"
 authors = ["root <root@localhost>"]
+
+[dev-dependencies]
+
+itertools = "0.3"
