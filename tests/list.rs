@@ -1,3 +1,4 @@
+extern crate itertools as it;
 extern crate ixlist;
 
 use ixlist::{
@@ -51,10 +52,10 @@ fn iter()
     assert_eq!(l.iter().rev().count(), 3);
     assert_eq!(l.iter_mut().count(), 3);
     assert_eq!(l.iter_mut().rev().count(), 3);
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1,2,3]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3,2,1]);
-    assert_eq!(l.iter_mut().cloned().collect::<Vec<_>>(), vec![1,2,3]);
-    assert_eq!(l.iter_mut().rev().cloned().collect::<Vec<_>>(), vec![3,2,1]);
+    assert!(it::equal(l.iter(), &[1,2,3]));
+    assert!(it::equal(l.iter().rev(), &[3,2,1]));
+    assert!(it::equal(l.iter_mut(), &[1,2,3]));
+    assert!(it::equal(l.iter_mut().rev(), &[3,2,1]));
 }
 
 #[test]
@@ -74,16 +75,16 @@ fn cursor()
         assert_eq!(c.next(), Some(&mut 77));
         assert_eq!(c.next(), Some(&mut 4));
     }
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![0, 1, 2, 3, 77, 4]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![4, 77, 3, 2, 1, 0]);
+    assert!(it::equal(l.iter(), &[0, 1, 2, 3, 77, 4]));
+    assert!(it::equal(l.iter().rev(), &[4, 77, 3, 2, 1, 0]));
 
     {
         let mut c = l.cursor();
         c.seek(Seek::Forward(2));
         c.insert(20);
     }
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![0, 1, 20, 2, 3, 77, 4]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![4, 77, 3, 2, 20, 1, 0]);
+    assert!(it::equal(l.iter(), &[0, 1, 20, 2, 3, 77, 4]));
+    assert!(it::equal(l.iter().rev(), &[4, 77, 3, 2, 20, 1, 0]));
 
     {
         let mut c = l.cursor();
@@ -91,8 +92,8 @@ fn cursor()
         c.seek(Seek::Tail);
         c.insert(30);
     }
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![0, 1, 20, 2, 3, 77, 4, 30]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![30, 4, 77, 3, 2, 20, 1, 0]);
+    assert!(it::equal(l.iter(), &[0, 1, 20, 2, 3, 77, 4, 30]));
+    assert!(it::equal(l.iter().rev(), &[30, 4, 77, 3, 2, 20, 1, 0]));
 
     let mut l = List::new();
     {
@@ -107,13 +108,13 @@ fn cursor()
         c.seek(Seek::Backward(1));
         c.insert(4);
     }
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![2, 0, 4, 1, 3]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3, 1, 4, 0, 2]);
+    assert!(it::equal(l.iter(), &[2, 0, 4, 1, 3]));
+    assert!(it::equal(l.iter().rev(), &[3, 1, 4, 0, 2]));
 
     l.linearize();
 
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![2, 0, 4, 1, 3]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![3, 1, 4, 0, 2]);
+    assert!(it::equal(l.iter(), &[2, 0, 4, 1, 3]));
+    assert!(it::equal(l.iter().rev(), &[3, 1, 4, 0, 2]));
 
     // test wrap around with .next()
     let mut l = List::new();
@@ -127,8 +128,8 @@ fn cursor()
         assert!(c.next().is_some());
         c.insert(-1);
     }
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1, -1, 0]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![0, -1, 1]);
+    assert!(it::equal(l.iter(), &[1, -1, 0]));
+    assert!(it::equal(l.iter().rev(), &[0, -1, 1]));
 }
 
 #[test]
@@ -137,17 +138,17 @@ fn extend()
     let mut l = List::new();
     l.push_front(1);
     l.extend(2..2);
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![1]);
+    assert!(it::equal(l.iter(), &[1]));
+    assert!(it::equal(l.iter().rev(), &[1]));
 
     l.extend(2..5);
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![1, 2, 3, 4]);
-    assert_eq!(l.iter().rev().cloned().collect::<Vec<_>>(), vec![4, 3, 2, 1]);
+    assert!(it::equal(l.iter(), &[1, 2, 3, 4]));
+    assert!(it::equal(l.iter().rev(), &[4, 3, 2, 1]));
 }
 
 #[test]
 fn from_iter()
 {
     let l: List<_> = (0..5).collect();
-    assert_eq!(l.iter().cloned().collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
+    assert!(it::equal(l.iter(), &[0, 1, 2, 3, 4]));
 }
