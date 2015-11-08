@@ -556,8 +556,8 @@ impl<'a, T: 'a> Cursor<'a, T>
         match offset {
             Seek::Head => self.pos = self.list.head(),
             Seek::Tail => self.pos = END,
-            Seek::Forward(n) => for _ in (0..n) { if self.pos == END { break; } self.next(); },
-            Seek::Backward(n) => for _ in (0..n) { if self.pos == self.list.head() { break; } self.prev(); }
+            Seek::Forward(n) => for _ in 0..n { if self.pos == END { break; } self.next(); },
+            Seek::Backward(n) => for _ in 0..n { if self.pos == self.list.head() { break; } self.prev(); }
         }
     }
 }
