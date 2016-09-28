@@ -6,4 +6,4 @@ authors = ["bluss"]
 
 [dev-dependencies]
 
-itertools = "0.4"
+itertools = "0.5"
