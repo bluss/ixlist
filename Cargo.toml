@@ -8,3 +8,8 @@ authors = ["bluss"]
 
 rand = "0.3"
 itertools = "0.6.2"
+bencher = "0.1"
+
+[[bench]]
+name = "bench1"
+harness = false
