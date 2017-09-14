@@ -1,8 +1,17 @@
 [package]
 
 name = "ixlist"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["bluss"]
+license = "MIT/Apache-2.0"
+
+description = "The “ixlist” is a linked list in a vector, or if you want a list in a pond or an arena-allocated linked index-chasing fest. Implements a queue interface and a cursor."
+
+documentation = "https://docs.rs/ixlist/"
+repository = "https://github.com/bluss/ixlist"
+
+keywords = ["data-structure", "linked-list", "indexes", "are-you-serious", "nah"]
+categories = ["data-structures"]
 
 [dev-dependencies]
 
@@ -13,3 +22,7 @@ bencher = "0.1"
 [[bench]]
 name = "bench1"
 harness = false
+
+[package.metadata.release]
+no-dev-version = true
+
