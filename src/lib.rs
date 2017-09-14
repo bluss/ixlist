@@ -321,7 +321,7 @@ impl<T> List<T>
         }
 
         // sort by index
-        self.nodes.sort_by(|a, b| a.next().cmp(&b.next()));
+        self.nodes.sort_unstable_by_key(Node::next);
 
         // iterate and re-label in order
         // prev's need update, all the next links except the last should be ok.
