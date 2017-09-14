@@ -1,10 +1,10 @@
 
-ixlist — simpl doubly-linked list
-=================================
+ixlist — simpel doubly-linked list
+==================================
 
 Please read the `API documentation here`__
 
-__ http://bluss.github.io/ixlist/
+__ https://docs.rs/ixlist/
 
 License
 =======
