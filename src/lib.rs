@@ -1,3 +1,6 @@
+//! [`List`] is a doubly linked list stored in one contiguous allocation.
+//!
+//! [`List`]: struct.List.html
 
 use std::iter::IntoIterator;
 use std::iter::FromIterator;
