@@ -6,4 +6,5 @@ authors = ["bluss"]
 
 [dev-dependencies]
 
+rand = "0.3"
 itertools = "0.5"

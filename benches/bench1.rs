@@ -1,8 +1,10 @@
+#![feature(test)]
 extern crate ixlist;
 extern crate test;
+extern crate rand;
 
-use std::rand::{self, Rng};
-use std::collections::{DList, RingBuf};
+use rand::{Rng};
+use std::collections::{LinkedList, VecDeque};
 use ixlist::{
     List,
 };
@@ -13,7 +15,7 @@ use ixlist::{
 fn push_front_dlist(b: &mut test::Bencher)
 {
     b.iter(|| {
-        let mut dl = DList::new();
+        let mut dl = LinkedList::new();
         let n = 1000;
         for _ in (0..n) {
             dl.push_front(test::black_box(1));
@@ -26,7 +28,7 @@ fn push_front_dlist(b: &mut test::Bencher)
 fn push_front_ringbuf(b: &mut test::Bencher)
 {
     b.iter(|| {
-        let mut l = RingBuf::new();
+        let mut l = VecDeque::new();
         let n = 1000;
         for _ in (0..n) {
             l.push_front(test::black_box(1));
@@ -42,7 +44,7 @@ fn push_front_ringbuf_cap(b: &mut test::Bencher)
 {
     b.iter(|| {
         let N = 1000;
-        let mut l = RingBuf::with_capacity(N);
+        let mut l = VecDeque::with_capacity(N);
         for _ in (0..N) {
             l.push_front(test::black_box(1));
         }
@@ -80,7 +82,7 @@ fn push_front_list_cap(b: &mut test::Bencher)
 #[bench]
 fn iterate_dlist(b: &mut test::Bencher)
 {
-    let mut dl = DList::new();
+    let mut dl = LinkedList::new();
     let n = 1000;
     let mut rng = rand::weak_rng();
     for _ in (0..n) {
@@ -100,7 +102,7 @@ fn iterate_dlist(b: &mut test::Bencher)
 #[bench]
 fn iterate_ringbuf(b: &mut test::Bencher)
 {
-    let mut dl = RingBuf::new();
+    let mut dl = VecDeque::new();
     let n = 1000;
     let mut rng = rand::weak_rng();
     // scramble a bit so we get a random access iteration
